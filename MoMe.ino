@@ -14,6 +14,9 @@
 //#include "DHT.h"
 #include<stdlib.h>
 
+// Defines når testing skal utførast
+#define testing 
+
 
 // Define CC3000 chip pins
 #define ADAFRUIT_CC3000_IRQ   1
