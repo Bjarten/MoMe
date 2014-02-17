@@ -1,9 +1,8 @@
-/*************************************************** 
-  This is a sketch to interface a soil sensor & Carriots
-  using the Adafruit CC3000 breakout board (or WiFi shield)
-  
-  Written by Marco Schwartz for Open Home Automation
- ****************************************************/
+
+ /***************************MoMe*********************************
+ Opretta av: Bjarte Mehus Sunde 17.02.2014
+ Kommentar: Dette er koden til MoMe, det magiske armbåndet. 
+ *****************************************************************/
 
 // Libraries
 #include <Adafruit_CC3000.h>
@@ -11,36 +10,34 @@
 #include <SPI.h>
 #include <string.h>
 #include "utility/debug.h"
-//#include "DHT.h"
+//#include "DHT.h"             
 #include<stdlib.h>
-
-// Defines når testing skal utførast
-#define testing 
 
 
 // Define CC3000 chip pins
-#define ADAFRUIT_CC3000_IRQ   1
+#define ADAFRUIT_CC3000_IRQ   1      
 #define ADAFRUIT_CC3000_VBAT  9
 #define ADAFRUIT_CC3000_CS    12
 
-// Soil sensor pins
-const uint8_t dataPin  =  6;
-const uint8_t clockPin =  10;
-
-// Soil sensor variables
-float t;
-float h;
-float dewpoint;
+// Soil sensor pins                    //   
+const uint8_t dataPin  =  6;           // 
+const uint8_t clockPin =  10;          //
+                                       // Kode frå eit eksempel, kan fjernes seinare
+// Soil sensor variables               // 
+float t;                               //
+float h;                               //
+float dewpoint;                        //
 
 
 
 // Create CC3000 instances
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
-                                         SPI_CLOCK_DIV2); // you can change this clock speed
+                                         SPI_CLOCK_DIV2); // you can change this clock speed. Klokkehastigheten på Flora er 4 Mhz
                                 
 // WLAN parameters
-#define WLAN_SSID       "AndroidAP"
-#define WLAN_PASS       "ekgf4435"
+#define WLAN_SSID       "AndroidAP"    // WiFi-hotspot fra mobiltelefon
+#define WLAN_PASS       "ekgf4435"     // Koden til hotspot
+
 // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
 #define WLAN_SECURITY   WLAN_SEC_WPA2
 
@@ -157,7 +154,7 @@ void loop(void)
   cc3000.disconnect();
   
   // Wait 10 seconds until next update
-//  delay(10000);
+  //  delay(10000);
    
 } // loop
 
