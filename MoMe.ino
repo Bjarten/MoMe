@@ -1,4 +1,3 @@
-
  /***************************MoMe*********************************
  Opretta av: Bjarte Mehus Sunde 17.02.2014
  Kommentar: Dette er koden til MoMe, det magiske armbåndet. 
@@ -10,9 +9,14 @@
 #include <SPI.h>
 #include <string.h>
 #include "utility/debug.h"
-//#include "DHT.h"             
 #include<stdlib.h>
+#include <Wire.h>
+#include <Adafruit_LSM303.h>
+#include <Adafruit_NeoPixel.h>
 
+
+// Feilsøking
+//#define FEILSOKING
 
 // Define CC3000 chip pins
 #define ADAFRUIT_CC3000_IRQ   1      
@@ -28,6 +32,12 @@ float t;                               //
 float h;                               //
 float dewpoint;                        //
 
+// Lars
+#define PIN 6
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_LSM303 lsm;
+bool fall = false;
 
 
 // Create CC3000 instances
@@ -50,7 +60,19 @@ uint32_t ip;
 
 void setup(void)
 {
+  // Lars
+  strip.begin();
+  strip.show();
+  
+    // Try to initialise and warn if we couldn't detect the chip
+  if (!lsm.begin())
+  {
+    Serial.println("Oops ... unable to initialize the LSM303. Check your wiring!");
+    while (1);
+  }
+  
   // Initialize
+  #if defined(FEILSOKING)
   Serial.begin(9600);
   
   Serial.println(F("\nInitializing..."));
@@ -59,6 +81,7 @@ void setup(void)
     Serial.println(F("Couldn't begin()! Check your wiring?"));
     while(1);
   }
+  #endif
  
 }
 
@@ -77,10 +100,14 @@ void loop(void)
  
   // Get the website IP & print it
   ip = 0;
+  #if defined(FEILSOKING)
   Serial.print(WEBSITE); Serial.print(F(" -> "));
+  #endif
   while (ip == 0) {
     if (! cc3000.getHostByName(WEBSITE, &ip)) {
+      #if defined(FEILSOKING)
       Serial.println(F("Couldn't resolve!"));
+      #endif
     }
     delay(500);
   }
@@ -100,22 +127,24 @@ void loop(void)
   String data = "{\"protocol\":\"v2\",\"device\":\""+String(DEVICE)+"\",\"at\":\"now\",\"data\":{\"Temperature\":"+String(temperature)+",\"Humidity\":"+String(humidity)+"}}";
   
   length = data.length();
+  
+  #if defined(FEILSOKING)
   Serial.print("Data length");
   Serial.println(length);
   Serial.println();
   
-// Print request for debug purposes
-//  Serial.println("POST /streams HTTP/1.1");
-//  Serial.println("Host: api.carriots.com");
-//  Serial.println("Accept: application/json");
-//  Serial.println("User-Agent: Arduino-Carriots");
-//  Serial.println("Content-Type: application/json");
-//  Serial.println("carriots.apikey: " + String(API_KEY));
-//  Serial.println("Content-Length: " + String(length));
-//  Serial.print("Connection: close");
-//  Serial.println();
-//  Serial.println(data);
-//  
+  // Print request for debug purposes
+  Serial.println("POST /streams HTTP/1.1");
+  Serial.println("Host: api.carriots.com");
+  Serial.println("Accept: application/json");
+  Serial.println("User-Agent: Arduino-Carriots");
+  Serial.println("Content-Type: application/json");
+  Serial.println("carriots.apikey: " + String(API_KEY));
+  Serial.println("Content-Length: " + String(length));
+  Serial.print("Connection: close");
+  Serial.println();
+  Serial.println(data);
+  #endif
 
 
 // Send request
@@ -136,25 +165,54 @@ void loop(void)
     client.println(data);
   } 
   else {
-    Serial.println(F("Connection failed"));    
+    #if defined(FEILSOKING)
+    Serial.println(F("Connection failed"));
+    #endif
     return;
   }
-  
+  #if defined(FEILSOKING)
   Serial.println(F("-------------------------------------"));
+  #endif
   while (client.connected()) {
     while (client.available()) {
       char c = client.read();
+      #if defined(FEILSOKING)
       Serial.print(c);
+      #endif
     }
   }
   client.close();
-  
+  #if defined(FEILSOKING)
   Serial.println(F("-------------------------------------"));
   Serial.println(F("\n\nDisconnecting"));
+  #endif
   cc3000.disconnect();
   
   // Wait 10 seconds until next update
   //  delay(10000);
-   
+  
+  // Lars
+  
+   lsm.read();
+  if(lsm.accelData.z > 1900 || lsm.accelData.z < -400 || lsm.accelData.y > 1500 || lsm.accelData.y < -1500 || lsm.accelData.x > 1500 || lsm.accelData.x < -1500 || fall)
+  {
+    fall = true;
+colorWipe(strip.Color(255, 0, 0), 3); // Red
+delay(200);
+colorWipe(strip.Color(0, 0, 0), 3);
+delay(200);
+  }
+  
+  Serial.print("Accel X: "); Serial.print((int)lsm.accelData.x); Serial.print(" ");
+  Serial.print("Y: "); Serial.print((int)lsm.accelData.y);       Serial.print(" ");
+  Serial.print("Z: "); Serial.println((int)lsm.accelData.z);     Serial.print(" ");
+  delay(10);
+}
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, c);
+      strip.show();
+      delay(wait);
+  }
 } // loop
 
